@@ -1,0 +1,71 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+
+java_library(
+    name = "telequick_java_sdk",
+    srcs = glob(["src/main/java/**/*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@maven//:io_netty_netty_all",
+        "@maven//:io_netty_netty_buffer",
+        "@maven//:io_netty_netty_common",
+        "@maven//:io_netty_netty_handler",
+        "@maven//:io_netty_netty_transport",
+        "@maven//:io_netty_netty_codec",
+        "@maven//:io_netty_incubator_netty_incubator_codec_classes_quic",
+        "@maven//:io_netty_incubator_netty_incubator_codec_native_quic_linux_x86_64",
+        "@maven//:io_jsonwebtoken_jjwt_api",
+        "@maven//:io_jsonwebtoken_jjwt_impl",
+        "@maven//:io_jsonwebtoken_jjwt_jackson",
+        "@maven//:net_java_dev_jna_jna",
+        "@maven//:org_json_json",
+    ],
+)
+
+java_test(
+    name = "ClientTest",
+    srcs = ["src/test/java/com/telequick/sdk/ClientTest.java"],
+    use_testrunner = False,
+    main_class = "org.junit.platform.console.ConsoleLauncher",
+    args = [
+        "--select-class=com.telequick.sdk.ClientTest",
+        "--disable-banner",
+        "--fail-if-no-tests",
+    ],
+    deps = [
+        ":telequick_java_sdk",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_console",
+    ],
+)
+
+genrule(
+    name = "generate_pom",
+    outs = ["pom.xml"],
+    cmd = """
+cat << 'EOF' > $@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.telequick.sdk</groupId>
+    <artifactId>telequick-sdk</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+</project>
+EOF
+""",
+)
+
+pkg_tar(
+    name = "telequick_java_distribution",
+    srcs = [
+        "pom.xml",
+        "libtelequick_java_sdk.jar",
+        "//core:telequick_core_ffi.so",
+    ],
+    extension = "tar.gz",
+    visibility = ["//visibility:public"],
+)
